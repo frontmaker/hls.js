@@ -85,6 +85,7 @@ class DemuxerInline {
         return;
       }
       this.demuxer = demuxer;
+      this.counter = 0;
     }
     const remuxer = this.remuxer;
 
@@ -100,6 +101,15 @@ class DemuxerInline {
       demuxer.setDecryptData(decryptdata);
     }
     demuxer.append(data,timeOffset,contiguous,accurateTimeOffset);
+
+    if(this.counter == 1) {
+      demuxer.observer.trigger(Event.FACE_SYNC_DATA, {
+        skipFrames: demuxer.initDts,
+        duration: demuxer.duration
+      });      
+    }
+
+    this.counter += 1;
   }
 }
 

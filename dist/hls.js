@@ -632,7 +632,7 @@ var hlsDefaultConfig = exports.hlsDefaultConfig = {
       nudgeOffset: 0.1, // used by stream-controller
       nudgeMaxRetry: 3, // used by stream-controller
       maxFragLookUpTolerance: 0.2, // used by stream-controller
-      liveSyncDurationCount: 3, // used by stream-controller
+      liveSyncDurationCount: 1, // used by stream-controller
       liveMaxLatencyDurationCount: Infinity, // used by stream-controller
       liveSyncDuration: undefined, // used by stream-controller
       liveMaxLatencyDuration: undefined, // used by stream-controller
@@ -6730,6 +6730,7 @@ var DemuxerInline = function () {
           return;
         }
         this.demuxer = demuxer;
+        this.counter = 0;
       }
       var remuxer = this.remuxer;
 
@@ -6745,6 +6746,15 @@ var DemuxerInline = function () {
         demuxer.setDecryptData(decryptdata);
       }
       demuxer.append(data, timeOffset, contiguous, accurateTimeOffset);
+
+      if (this.counter == 1) {
+        demuxer.observer.trigger(_events2.default.FACE_SYNC_DATA, {
+          skipFrames: demuxer.initDts,
+          duration: demuxer.duration
+        });
+      }
+
+      this.counter += 1;
     }
   }]);
 
@@ -6835,6 +6845,7 @@ var DemuxerWorker = function DemuxerWorker(self) {
   observer.on(_events2.default.FRAG_PARSING_METADATA, forwardMessage);
   observer.on(_events2.default.FRAG_PARSING_USERDATA, forwardMessage);
   observer.on(_events2.default.INIT_PTS_FOUND, forwardMessage);
+  observer.on(_events2.default.FACE_SYNC_DATA, forwardMessage);
 
   // special case for FRAG_PARSING_DATA: pass data1/data2 as transferable object (no copy)
   observer.on(_events2.default.FRAG_PARSING_DATA, function (ev, data) {
@@ -6930,6 +6941,8 @@ var Demuxer = function () {
     observer.on(_events2.default.FRAG_PARSING_METADATA, forwardMessage);
     observer.on(_events2.default.FRAG_PARSING_USERDATA, forwardMessage);
     observer.on(_events2.default.INIT_PTS_FOUND, forwardMessage);
+    observer.on(_events2.default.INIT_PTS_FOUND, forwardMessage);
+    observer.on(_events2.default.FACE_SYNC_DATA, forwardMessage);
 
     var typeSupported = {
       mp4: MediaSource.isTypeSupported('video/mp4'),
@@ -8065,6 +8078,12 @@ var TSDemuxer = function () {
           pes,
           unknownPIDs = false;
       this.contiguous = contiguous;
+
+      this.initPts = 0;
+      this.initDts = 0;
+      this.duration = 0;
+      this.frameCount = 0;
+
       var pmtParsed = this.pmtParsed,
           avcTrack = this._avcTrack,
           audioTrack = this._audioTrack,
@@ -8107,6 +8126,16 @@ var TSDemuxer = function () {
             case avcId:
               if (stt) {
                 if (avcData && (pes = parsePES(avcData))) {
+
+                  if (this.frameCount == 0) {
+                    this.initPts = pes.syncPts;
+                    this.initDts = pes.syncDts;
+                  }
+                  if (this.frameCount == 1) {
+                    this.duration = pes.syncPts - this.initPts;
+                  }
+                  this.frameCount += 1;
+
                   parseAVCPES(pes, false);
                 }
                 avcData = { data: [], size: 0 };
@@ -8366,6 +8395,9 @@ var TSDemuxer = function () {
           pesDts,
           payloadStartOffset,
           data = stream.data;
+      var corePts = 0,
+          coreDts = 0;
+
       // safety check
       if (!stream || stream.size === 0) {
         return null;
@@ -8406,6 +8438,8 @@ var TSDemuxer = function () {
             // decrement 2^33
             pesPts -= 8589934592;
           }
+          corePts = pesPts;
+
           if (pesFlags & 0x40) {
             pesDts = (frag[14] & 0x0E) * 536870912 + // 1 << 29
             (frag[15] & 0xFF) * 4194304 + // 1 << 22
@@ -8417,10 +8451,14 @@ var TSDemuxer = function () {
               // decrement 2^33
               pesDts -= 8589934592;
             }
-            if (pesPts - pesDts > 60 * 90000) {
-              _logger.logger.warn(Math.round((pesPts - pesDts) / 90000) + 's delta between PTS and DTS, align them');
-              pesPts = pesDts;
-            }
+            coreDts = pesDts;
+
+            pesDts = pesPts;
+
+            // if (pesPts - pesDts > 60*90000) {
+            //   logger.warn(`${Math.round((pesPts - pesDts)/90000)}s delta between PTS and DTS, align them`);
+            //   pesPts = pesDts;
+            // }
           } else {
             pesDts = pesPts;
           }
@@ -8454,7 +8492,7 @@ var TSDemuxer = function () {
           // payload size : remove PES header + PES extension
           pesLen -= pesHdrLen + 3;
         }
-        return { data: pesData, pts: pesPts, dts: pesDts, len: pesLen };
+        return { data: pesData, pts: pesPts, dts: pesDts, len: pesLen, syncPts: corePts, syncDts: coreDts };
       } else {
         return null;
       }
@@ -9263,6 +9301,8 @@ exports.default = EventHandler;
 'use strict';
 
 module.exports = {
+  // tchernitski
+  FACE_SYNC_DATA: 'hlsSyncData',
   // fired before MediaSource is attaching to media element - data: { media }
   MEDIA_ATTACHING: 'hlsMediaAttaching',
   // fired when MediaSource has been succesfully attached to media element - data: { }

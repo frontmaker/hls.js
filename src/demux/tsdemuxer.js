@@ -68,6 +68,12 @@
     var start, len = data.length, stt, pid, atf, offset,pes,
         unknownPIDs = false;
     this.contiguous = contiguous;
+
+    this.initPts = 0;
+    this.initDts = 0;
+    this.duration = 0;
+    this.frameCount = 0;
+
     var pmtParsed = this.pmtParsed,
         avcTrack = this._avcTrack,
         audioTrack = this._audioTrack,
@@ -110,6 +116,16 @@
           case avcId:
             if (stt) {
               if (avcData && (pes = parsePES(avcData))) {
+
+                if(this.frameCount == 0) {
+                  this.initPts = pes.syncPts;
+                  this.initDts = pes.syncDts;
+                }
+                if(this.frameCount == 1) {
+                  this.duration = pes.syncPts - this.initPts;
+                }
+                this.frameCount += 1;
+
                 parseAVCPES(pes,false);
               }
               avcData = {data: [], size: 0};
@@ -347,6 +363,8 @@
 
   _parsePES(stream) {
     var i = 0, frag, pesFlags, pesPrefix, pesLen, pesHdrLen, pesData, pesPts, pesDts, payloadStartOffset, data = stream.data;
+    var corePts = 0, coreDts = 0;
+
     // safety check
     if (!stream || stream.size === 0) {
       return null;
@@ -387,6 +405,8 @@
             // decrement 2^33
             pesPts -= 8589934592;
           }
+          corePts = pesPts;
+        
         if (pesFlags & 0x40) {
           pesDts = (frag[14] & 0x0E ) * 536870912 +// 1 << 29
             (frag[15] & 0xFF ) * 4194304 +// 1 << 22
@@ -398,10 +418,14 @@
             // decrement 2^33
             pesDts -= 8589934592;
           }
-          if (pesPts - pesDts > 60*90000) {
-            logger.warn(`${Math.round((pesPts - pesDts)/90000)}s delta between PTS and DTS, align them`);
-            pesPts = pesDts;
-          }
+          coreDts = pesDts;
+
+          pesDts = pesPts;
+
+          // if (pesPts - pesDts > 60*90000) {
+          //   logger.warn(`${Math.round((pesPts - pesDts)/90000)}s delta between PTS and DTS, align them`);
+          //   pesPts = pesDts;
+          // }
         } else {
           pesDts = pesPts;
         }
@@ -435,7 +459,7 @@
         // payload size : remove PES header + PES extension
         pesLen -= pesHdrLen+3;
       }
-      return {data: pesData, pts: pesPts, dts: pesDts, len: pesLen};
+      return {data: pesData, pts: pesPts, dts: pesDts, len: pesLen, syncPts: corePts, syncDts: coreDts};
     } else {
       return null;
     }

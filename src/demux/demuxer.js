@@ -37,6 +37,7 @@ class Demuxer {
     observer.on(Event.FRAG_PARSING_METADATA, forwardMessage);
     observer.on(Event.FRAG_PARSING_USERDATA, forwardMessage);
     observer.on(Event.INIT_PTS_FOUND, forwardMessage);
+    observer.on(Event.FACE_SYNC_DATA, forwardMessage);
 
     const typeSupported = {
       mp4 : MediaSource.isTypeSupported('video/mp4'),
