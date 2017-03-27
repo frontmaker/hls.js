@@ -25,6 +25,14 @@
     this.typeSupported = typeSupported;
     this.remuxer = remuxer;
     this.sampleAes = null;
+
+    this.initPts = 0;
+    this.initDts = 0;
+    this.duration = 0;
+    
+
+    // this.corePts = -1;
+    // this.coreDts = -1;
   }
 
   setDecryptData(decryptdata) {
@@ -64,15 +72,13 @@
   }
 
   // feed incoming data to the front of the parsing pipeline
-  append(data, timeOffset, contiguous,accurateTimeOffset) {
+  append(data, timeOffset, contiguous,accurateTimeOffset, counterFlag) {
     var start, len = data.length, stt, pid, atf, offset,pes,
         unknownPIDs = false;
     this.contiguous = contiguous;
+    this.counterFlag = counterFlag;
+    this.flag = 0;
 
-    this.initPts = 0;
-    this.initDts = 0;
-    this.duration = 0;
-    this.frameCount = 0;
 
     var pmtParsed = this.pmtParsed,
         avcTrack = this._avcTrack,
@@ -115,17 +121,18 @@
         switch(pid) {
           case avcId:
             if (stt) {
-              if (avcData && (pes = parsePES(avcData))) {
+              if (avcData && (pes = parsePES(avcData, this.counterFlag))) {
 
-                if(this.frameCount == 0) {
+                if(this.counterFlag == 0 && this.flag == 0) {
                   this.initPts = pes.syncPts;
                   this.initDts = pes.syncDts;
+                  // console.log("0:: " + this.initPts + ", " + this.initDts);
                 }
-                if(this.frameCount == 1) {
+                if(this.counterFlag == 0 && this.flag == 1) {
                   this.duration = pes.syncPts - this.initPts;
+                  // console.log("1:: " + this.duration);
                 }
-                this.frameCount += 1;
-
+                this.flag += 1;
                 parseAVCPES(pes,false);
               }
               avcData = {data: [], size: 0};
@@ -361,8 +368,10 @@
     return result;
   }
 
-  _parsePES(stream) {
+  _parsePES(stream, counter) {
+  // _parsePES = (stream) => {  
     var i = 0, frag, pesFlags, pesPrefix, pesLen, pesHdrLen, pesData, pesPts, pesDts, payloadStartOffset, data = stream.data;
+    
     var corePts = 0, coreDts = 0;
 
     // safety check
@@ -405,7 +414,9 @@
             // decrement 2^33
             pesPts -= 8589934592;
           }
-          corePts = pesPts;
+
+        corePts = pesPts;  
+        // console.log(corePts);
         
         if (pesFlags & 0x40) {
           pesDts = (frag[14] & 0x0E ) * 536870912 +// 1 << 29
@@ -418,6 +429,7 @@
             // decrement 2^33
             pesDts -= 8589934592;
           }
+
           coreDts = pesDts;
 
           pesDts = pesPts;

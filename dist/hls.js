@@ -632,7 +632,7 @@ var hlsDefaultConfig = exports.hlsDefaultConfig = {
       nudgeOffset: 0.1, // used by stream-controller
       nudgeMaxRetry: 3, // used by stream-controller
       maxFragLookUpTolerance: 0.2, // used by stream-controller
-      liveSyncDurationCount: 6, // used by stream-controller
+      liveSyncDurationCount: 1, // used by stream-controller
       liveMaxLatencyDurationCount: Infinity, // used by stream-controller
       liveSyncDuration: undefined, // used by stream-controller
       liveMaxLatencyDuration: undefined, // used by stream-controller
@@ -6745,7 +6745,8 @@ var DemuxerInline = function () {
       if (typeof demuxer.setDecryptData === 'function') {
         demuxer.setDecryptData(decryptdata);
       }
-      demuxer.append(data, timeOffset, contiguous, accurateTimeOffset);
+
+      demuxer.append(data, timeOffset, contiguous, accurateTimeOffset, this.counter);
 
       if (this.counter == 1) {
         demuxer.observer.trigger(_events2.default.FACE_SYNC_DATA, {
@@ -8031,6 +8032,13 @@ var TSDemuxer = function () {
     this.typeSupported = typeSupported;
     this.remuxer = remuxer;
     this.sampleAes = null;
+
+    this.initPts = 0;
+    this.initDts = 0;
+    this.duration = 0;
+
+    // this.corePts = -1;
+    // this.coreDts = -1;
   }
 
   _createClass(TSDemuxer, [{
@@ -8067,7 +8075,7 @@ var TSDemuxer = function () {
 
   }, {
     key: 'append',
-    value: function append(data, timeOffset, contiguous, accurateTimeOffset) {
+    value: function append(data, timeOffset, contiguous, accurateTimeOffset, counterFlag) {
       var start,
           len = data.length,
           stt,
@@ -8077,11 +8085,8 @@ var TSDemuxer = function () {
           pes,
           unknownPIDs = false;
       this.contiguous = contiguous;
-
-      this.initPts = 0;
-      this.initDts = 0;
-      this.duration = 0;
-      this.frameCount = 0;
+      this.counterFlag = counterFlag;
+      this.flag = 0;
 
       var pmtParsed = this.pmtParsed,
           avcTrack = this._avcTrack,
@@ -8124,17 +8129,18 @@ var TSDemuxer = function () {
           switch (pid) {
             case avcId:
               if (stt) {
-                if (avcData && (pes = parsePES(avcData))) {
+                if (avcData && (pes = parsePES(avcData, this.counterFlag))) {
 
-                  if (this.frameCount == 0) {
+                  if (this.counterFlag == 0 && this.flag == 0) {
                     this.initPts = pes.syncPts;
                     this.initDts = pes.syncDts;
+                    // console.log("0:: " + this.initPts + ", " + this.initDts);
                   }
-                  if (this.frameCount == 1) {
+                  if (this.counterFlag == 0 && this.flag == 1) {
                     this.duration = pes.syncPts - this.initPts;
+                    // console.log("1:: " + this.duration);
                   }
-                  this.frameCount += 1;
-
+                  this.flag += 1;
                   parseAVCPES(pes, false);
                 }
                 avcData = { data: [], size: 0 };
@@ -8382,7 +8388,8 @@ var TSDemuxer = function () {
     }
   }, {
     key: '_parsePES',
-    value: function _parsePES(stream) {
+    value: function _parsePES(stream, counter) {
+      // _parsePES = (stream) => {  
       var i = 0,
           frag,
           pesFlags,
@@ -8394,6 +8401,7 @@ var TSDemuxer = function () {
           pesDts,
           payloadStartOffset,
           data = stream.data;
+
       var corePts = 0,
           coreDts = 0;
 
@@ -8437,7 +8445,9 @@ var TSDemuxer = function () {
             // decrement 2^33
             pesPts -= 8589934592;
           }
+
           corePts = pesPts;
+          // console.log(corePts);
 
           if (pesFlags & 0x40) {
             pesDts = (frag[14] & 0x0E) * 536870912 + // 1 << 29
@@ -8450,6 +8460,7 @@ var TSDemuxer = function () {
               // decrement 2^33
               pesDts -= 8589934592;
             }
+
             coreDts = pesDts;
 
             pesDts = pesPts;

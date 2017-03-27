@@ -100,7 +100,8 @@ class DemuxerInline {
     if (typeof demuxer.setDecryptData === 'function') {
       demuxer.setDecryptData(decryptdata);
     }
-    demuxer.append(data,timeOffset,contiguous,accurateTimeOffset);
+
+    demuxer.append(data,timeOffset,contiguous,accurateTimeOffset, this.counter);
 
     if(this.counter == 1) {
       demuxer.observer.trigger(Event.FACE_SYNC_DATA, {
