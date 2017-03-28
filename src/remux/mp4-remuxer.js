@@ -131,6 +131,9 @@ class MP4Remuxer {
         }
       };
       if (computePTSDTS) {
+
+        // console.log("remuxer: " + videoSamples[0].pts + ", " + videoSamples[0].dts + ", " + initPTS + ", " + initDTS);
+
         initPTS = Math.min(initPTS,videoSamples[0].pts - inputTimeScale * timeOffset);
         initDTS = Math.min(initDTS,videoSamples[0].dts - inputTimeScale * timeOffset);
         this.observer.trigger(Event.INIT_PTS_FOUND, { initPTS: initPTS});
