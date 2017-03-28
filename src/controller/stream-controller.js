@@ -985,6 +985,7 @@ class StreamController extends EventHandler {
         this.pendingBuffering = true;
         this.appended = false;
         logger.log(`Parsing ${sn} of [${details.startSN} ,${details.endSN}],level ${level}, cc ${fragCurrent.cc}`);
+
         let demuxer = this.demuxer;
         if (!demuxer) {
           demuxer = this.demuxer = new Demuxer(this.hls,'main');

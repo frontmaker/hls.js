@@ -105,7 +105,7 @@ class DemuxerInline {
 
     if(this.counter == 1) {
       demuxer.observer.trigger(Event.FACE_SYNC_DATA, {
-        initPTS: demuxer.initDts*demuxer.duration,
+        initPTS: demuxer.initDts,
         duration: demuxer.duration
       });      
     }

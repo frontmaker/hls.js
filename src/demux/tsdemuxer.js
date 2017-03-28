@@ -29,10 +29,6 @@
     this.initPts = 0;
     this.initDts = 0;
     this.duration = 0;
-    
-
-    // this.corePts = -1;
-    // this.coreDts = -1;
   }
 
   setDecryptData(decryptdata) {
@@ -78,8 +74,7 @@
     this.contiguous = contiguous;
     this.counterFlag = counterFlag;
     this.flag = 0;
-
-
+    
     var pmtParsed = this.pmtParsed,
         avcTrack = this._avcTrack,
         audioTrack = this._audioTrack,
@@ -125,11 +120,13 @@
 
                 if(this.counterFlag == 0 && this.flag == 0) {
                   this.initPts = pes.syncPts;
-                  this.initDts = pes.syncDts;
-                  // console.log("0:: " + this.initPts + ", " + this.initDts);
                 }
                 if(this.counterFlag == 0 && this.flag == 1) {
                   this.duration = pes.syncPts - this.initPts;
+                  // hls.js is always 20.4(aprox) frames ahead of current frame in html5 video container
+                  // need to be clarified
+                  this.initDts = pes.syncDts*this.duration - Math.round(timeOffset*90000.0 + 20.4*this.duration);
+
                   // console.log("1:: " + this.duration);
                 }
                 this.flag += 1;
