@@ -123,9 +123,9 @@
                 }
                 if(this.counterFlag == 0 && this.flag == 1) {
                   this.duration = pes.syncPts - this.initPts;
-                  // hls.js is always 20.4(aprox) frames ahead of current frame in html5 video container
+                  // hls.js is always 20.3(aprox) frames ahead of current frame in html5 video container
                   // need to be clarified
-                  this.initDts = pes.syncDts*this.duration - Math.round(timeOffset*90000.0 + 20.4*this.duration);
+                  this.initDts = pes.syncDts*this.duration - Math.round(timeOffset*90000.0 + 26.0*this.duration);
 
                   // console.log("1:: " + this.duration);
                 }
