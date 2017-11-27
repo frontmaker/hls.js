@@ -367,7 +367,7 @@
 
   _parsePES(stream, counter) {
   // _parsePES = (stream) => {  
-    var i = 0, frag, pesFlags, pesPrefix, pesLen, pesHdrLen, pesData, pesPts, pesDts, payloadStartOffset, data = stream.data;
+    var i = 0, myPts, frag, pesFlags, pesPrefix, pesLen, pesHdrLen, pesData, pesPts, pesDts, payloadStartOffset, data = stream.data;
     
     var corePts = 0, coreDts = 0;
 
@@ -407,13 +407,24 @@
           (frag[12] & 0xFF) * 128 +// 1 << 7
           (frag[13] & 0xFE) / 2;
           // check if greater than 2^32 -1
+          // console.log(pesPts);
           if (pesPts > 4294967295) {
             // decrement 2^33
             pesPts -= 8589934592;
           }
 
         corePts = pesPts;  
-        // console.log(corePts);
+        
+
+        myPts = (frag[9] & 0x0E) << 27
+          | (frag[10] & 0xFF) << 20
+          | (frag[11] & 0xFE) << 12
+          | (frag[12] & 0xFF) <<  5
+          | (frag[13] & 0xFE) >>>  3;
+          myPts *= 4; // Left shift by 2
+          myPts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
+          console.log(myPts);
+
         
         if (pesFlags & 0x40) {
           pesDts = (frag[14] & 0x0E ) * 536870912 +// 1 << 29
@@ -430,6 +441,8 @@
           coreDts = pesDts;
 
           pesDts = pesPts;
+
+          //console.log("pts = ", pesDts);
 
           // if (pesPts - pesDts > 60*90000) {
           //   logger.warn(`${Math.round((pesPts - pesDts)/90000)}s delta between PTS and DTS, align them`);
