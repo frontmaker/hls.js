@@ -125,8 +125,8 @@
                   this.duration = pes.syncPts - this.initPts;
                   // hls.js is always 20.3(aprox) frames ahead of current frame in html5 video container
                   // need to be clarified
-                  this.initDts = pes.syncDts*this.duration - Math.round(timeOffset*90000.0 + 26.0*this.duration);
-
+                  //this.initDts = pes.syncDts*this.duration - Math.round(timeOffset*90000.0 + 26.0*this.duration);
+                  this.initDts = pes.myPts;
                   // console.log("1:: " + this.duration);
                 }
                 this.flag += 1;
@@ -367,9 +367,9 @@
 
   _parsePES(stream, counter) {
   // _parsePES = (stream) => {  
-    var i = 0, myPts, frag, pesFlags, pesPrefix, pesLen, pesHdrLen, pesData, pesPts, pesDts, payloadStartOffset, data = stream.data;
+    var i = 0, frag, pesFlags, pesPrefix, pesLen, pesHdrLen, pesData, pesPts, pesDts, payloadStartOffset, data = stream.data;
     
-    var corePts = 0, coreDts = 0;
+    var corePts = 0;
 
     // safety check
     if (!stream || stream.size === 0) {
@@ -413,17 +413,19 @@
             pesPts -= 8589934592;
           }
 
-        corePts = pesPts;  
+        // corePts = pesPts;  
         
 
-        myPts = (frag[9] & 0x0E) << 27
+        corePts = (frag[9] & 0x0E) << 27
           | (frag[10] & 0xFF) << 20
           | (frag[11] & 0xFE) << 12
           | (frag[12] & 0xFF) <<  5
           | (frag[13] & 0xFE) >>>  3;
-          myPts *= 4; // Left shift by 2
-          myPts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
-          console.log(myPts);
+          corePts *= 4; // Left shift by 2
+          corePts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
+          
+
+          console.log(corePts);
 
         
         if (pesFlags & 0x40) {
@@ -438,7 +440,7 @@
             pesDts -= 8589934592;
           }
 
-          coreDts = pesDts;
+          // coreDts = pesDts;
 
           pesDts = pesPts;
 
@@ -481,7 +483,7 @@
         // payload size : remove PES header + PES extension
         pesLen -= pesHdrLen+3;
       }
-      return {data: pesData, pts: pesPts, dts: pesDts, len: pesLen, syncPts: corePts, syncDts: coreDts};
+      return {data: pesData, pts: pesPts, dts: pesDts, len: pesLen, syncPts: corePts};
     } else {
       return null;
     }
