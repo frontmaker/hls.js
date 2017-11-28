@@ -103,7 +103,7 @@ class DemuxerInline {
 
     demuxer.append(data,timeOffset,contiguous,accurateTimeOffset, this.counter);
 
-    if(this.counter == 1) {
+    if(this.counter == 0) {
       demuxer.observer.trigger(Event.FACE_SYNC_DATA, {
         initPTS: demuxer.initPts,
         duration: demuxer.duration

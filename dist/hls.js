@@ -6749,7 +6749,7 @@ var DemuxerInline = function () {
 
       demuxer.append(data, timeOffset, contiguous, accurateTimeOffset, this.counter);
 
-      if (this.counter == 1) {
+      if (this.counter == 0) {
         demuxer.observer.trigger(_events2.default.FACE_SYNC_DATA, {
           initPTS: demuxer.initPts,
           duration: demuxer.duration
@@ -8454,7 +8454,7 @@ var TSDemuxer = function () {
           corePts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
 
 
-          // console.log(corePts);
+          //console.log(corePts);
 
 
           if (pesFlags & 0x40) {

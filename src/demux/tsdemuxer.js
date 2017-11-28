@@ -425,7 +425,7 @@
           corePts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
           
 
-          // console.log(corePts);
+          //console.log(corePts);
 
         
         if (pesFlags & 0x40) {
