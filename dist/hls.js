@@ -8137,7 +8137,7 @@ var TSDemuxer = function () {
                     // hls.js is always 20.3(aprox) frames ahead of current frame in html5 video container
                     // need to be clarified
                     //this.initDts = pes.syncDts*this.duration - Math.round(timeOffset*90000.0 + 26.0*this.duration);
-                    this.initDts = pes.myPts;
+                    //this.initDts = pes.myPts;
                     // console.log("1:: " + this.duration);
                   }
                   this.flag += 1;
@@ -8454,7 +8454,8 @@ var TSDemuxer = function () {
           corePts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
 
 
-          console.log(corePts);
+          // console.log(corePts);
+
 
           if (pesFlags & 0x40) {
             pesDts = (frag[14] & 0x0E) * 536870912 + // 1 << 29
