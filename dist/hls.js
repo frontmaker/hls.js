@@ -11864,8 +11864,8 @@ var MP4Remuxer = function () {
           }
         };
         if (computePTSDTS) {
-          initPTS = Math.min(initPTS, videoSamples[0].syncPts - inputTimeScale * timeOffset);
-          initDTS = Math.min(initDTS, videoSamples[0].syncDts - inputTimeScale * timeOffset);
+          initPTS = Math.min(initPTS, videoSamples[0].pts - inputTimeScale * timeOffset);
+          initDTS = Math.min(initDTS, videoSamples[0].dts - inputTimeScale * timeOffset);
 
           this.observer.trigger(_events2.default.INIT_PTS_FOUND, { initPTS: initPTS, ptsOffset: inputTimeScale * timeOffset });
         }
