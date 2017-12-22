@@ -413,9 +413,6 @@
             pesPts -= 8589934592;
           }
 
-        // corePts = pesPts;  
-        
-
         corePts = (frag[9] & 0x0E) << 27
           | (frag[10] & 0xFF) << 20
           | (frag[11] & 0xFE) << 12
@@ -425,9 +422,6 @@
           corePts += (frag[13] & 0x06) >>> 1; // OR by the two LSBs
           
 
-          //console.log(corePts);
-
-        
         if (pesFlags & 0x40) {
           pesDts = (frag[14] & 0x0E ) * 536870912 +// 1 << 29
             (frag[15] & 0xFF ) * 4194304 +// 1 << 22
@@ -453,6 +447,8 @@
         } else {
           pesDts = pesPts;
         }
+
+        //console.log(pesPts);
       }
       pesHdrLen = frag[8];
       // 9 bytes : 6 bytes for PES header + 3 bytes for PES extension

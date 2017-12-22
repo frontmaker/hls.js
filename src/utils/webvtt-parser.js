@@ -49,37 +49,19 @@ const WebVTTParser = {
         let cueTime = '00:00.000';
         let mpegTs = 0;
         let localTime = 0;
-        let presentationTime = 0;
+        // let presentationTime = 0;
         let cues = [];
         let parsingError;
         let inHeader = true;
-        // let VTTCue = VTTCue || window.TextTrackCue;
+        let offset = undefined;
 
         // Create parser object using VTTCue with TextTrackCue fallback on certain browsers.
         let parser = new VTTParser();
 
         parser.oncue = function(cue) {
-            // Adjust cue timing; clamp cues to start no earlier than - and drop cues that don't end after - 0 on timeline.
-            let currCC = vttCCs[cc];
-            let cueOffset = vttCCs.ccOffset;
-
-            // Update offsets for new discontinuities
-            if (currCC && currCC.new) {
-                if (localTime) {
-                    // When local time is provided, offset = discontinuity start time - local time
-                    cueOffset = vttCCs.ccOffset = currCC.start;
-                } else {
-                    calculateOffset(vttCCs, cc, presentationTime);
-                }
-            }
-
-            if (presentationTime && !localTime) {
-                // If we have MPEGTS but no LOCAL time, offset = presentation time + discontinuity offset
-                cueOffset = presentationTime + vttCCs.ccOffset - vttCCs.presentationOffset;
-            }
-
-            cue.startTime += cueOffset - localTime;
-            cue.endTime += cueOffset - localTime;
+            
+            cue.startTime -= offset;
+            cue.endTime -= offset;
 
             // Fix encoding of special characters. TODO: Test with all sorts of weird characters.
             cue.text = decodeURIComponent(escape(cue.text));
@@ -118,13 +100,18 @@ const WebVTTParser = {
                     try {
                         // Calculate subtitle offset in milliseconds.
                         // If sync PTS is less than zero, we have a 33-bit wraparound, which is fixed by adding 2^33 = 8589934592.
-                        syncPTS = syncPTS < 0 ? syncPTS + 8589934592 : syncPTS;
-                        // Adjust MPEGTS by sync PTS.
-                        mpegTs -= syncPTS;
-                        // Convert cue time to seconds
-                        localTime = cueString2millis(cueTime) / 1000;
-                        // Convert MPEGTS to seconds from 90kHz.
-                        presentationTime = mpegTs / 90000;
+                        if (offset === undefined) {
+
+                            syncPTS = syncPTS < 0 ? syncPTS + 8589934592 : syncPTS;
+
+                            if(syncPTS > mpegTs) {
+                                mpegTs += 8589934592;
+                            }
+
+                            localTime = cueString2millis(cueTime) / 1000;
+
+                            offset = localTime - (mpegTs - syncPTS)/90000;
+                        }
 
                         if (localTime === -1) {
                             parsingError = new Error(`Malformed X-TIMESTAMP-MAP: ${line}`);

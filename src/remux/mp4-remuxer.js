@@ -133,7 +133,7 @@ class MP4Remuxer {
       if (computePTSDTS) {
         initPTS = Math.min(initPTS,videoSamples[0].pts - inputTimeScale * timeOffset);
         initDTS = Math.min(initDTS,videoSamples[0].dts - inputTimeScale * timeOffset);
-        
+
         this.observer.trigger(Event.INIT_PTS_FOUND, { initPTS: initPTS, ptsOffset: inputTimeScale * timeOffset});
       }
     }
