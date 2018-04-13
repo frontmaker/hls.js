@@ -14595,6 +14595,15 @@ var timeline_controller_TimelineController = function (_EventHandler) {
         // cue can appear more than once in different vtt files.
         // This avoid showing duplicated cues with same timecode and text.
         if (!currentTrack.cues.getCueById(cue.id)) {
+
+          cue.onenter = function () {
+            cueOnEnter(cue);
+          };
+
+          cue.onexit = function () {
+            cueOnExit(cue);
+          };
+
           try {
             currentTrack.addCue(cue);
           } catch (err) {
