@@ -274,11 +274,11 @@ class TimelineController extends EventHandler {
           if (!currentTrack.cues.getCueById(cue.id)) {
 
             cue.onenter = function(){
-              cueOnEnter(cue);
+              cueOnEnter(cue, hls.media);
             };
 
             cue.onexit = function(){
-              cueOnExit(cue);
+              cueOnExit(cue, hls.media);
             };
 
             try {
