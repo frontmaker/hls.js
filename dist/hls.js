@@ -14596,13 +14596,17 @@ var timeline_controller_TimelineController = function (_EventHandler) {
         // This avoid showing duplicated cues with same timecode and text.
         if (!currentTrack.cues.getCueById(cue.id)) {
 
-          cue.onenter = function () {
-            cueOnEnter(cue, hls.media);
-          };
+          if (hls.onCueEnterCallback !== undefined) {
+            cue.onenter = function () {
+              hls.onCueEnterCallback(cue, hls.media);
+            };
+          }
 
-          cue.onexit = function () {
-            cueOnExit(cue, hls.media);
-          };
+          if (hls.onCueExitCallback !== undefined) {
+            cue.onexit = function () {
+              hls.onCueExitCallback(cue, hls.media);
+            };
+          }
 
           try {
             currentTrack.addCue(cue);
@@ -15341,10 +15345,10 @@ var hls_Hls = function () {
     }
   }]);
 
-  function Hls() {
+  function Hls(onCueEnterCallback, onCueExitCallback) {
     var _this = this;
 
-    var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     hls__classCallCheck(this, Hls);
 
@@ -15372,6 +15376,8 @@ var hls_Hls = function () {
     Object(logger["a" /* enableLogs */])(config.debug);
     this.config = config;
     this._autoLevelCapping = -1;
+    this.onCueEnterCallback = onCueEnterCallback;
+    this.onCueExitCallback = onCueExitCallback;
     // observer setup
     var observer = this.observer = new events_default.a();
     observer.trigger = function trigger(event) {

@@ -11130,10 +11130,10 @@ var hls_Hls = function () {
     }
   }]);
 
-  function Hls() {
+  function Hls(onCueEnterCallback, onCueExitCallback) {
     var _this = this;
 
-    var config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     hls__classCallCheck(this, Hls);
 
@@ -11161,6 +11161,8 @@ var hls_Hls = function () {
     Object(logger["a" /* enableLogs */])(config.debug);
     this.config = config;
     this._autoLevelCapping = -1;
+    this.onCueEnterCallback = onCueEnterCallback;
+    this.onCueExitCallback = onCueExitCallback;
     // observer setup
     var observer = this.observer = new events_default.a();
     observer.trigger = function trigger(event) {

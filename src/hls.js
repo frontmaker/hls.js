@@ -49,7 +49,7 @@ export default class Hls {
     Hls.defaultConfig = defaultConfig;
   }
 
-  constructor(config = {}) {
+  constructor(onCueEnterCallback, onCueExitCallback, config = {}) {
     var defaultConfig = Hls.DefaultConfig;
 
     if ((config.liveSyncDurationCount || config.liveMaxLatencyDurationCount) && (config.liveSyncDuration || config.liveMaxLatencyDuration)) {
@@ -72,6 +72,8 @@ export default class Hls {
     enableLogs(config.debug);
     this.config = config;
     this._autoLevelCapping = -1;
+    this.onCueEnterCallback = onCueEnterCallback;
+    this.onCueExitCallback = onCueExitCallback;
     // observer setup
     var observer = this.observer = new EventEmitter();
     observer.trigger = function trigger (event, ...data) {

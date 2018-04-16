@@ -273,13 +273,17 @@ class TimelineController extends EventHandler {
           // This avoid showing duplicated cues with same timecode and text.
           if (!currentTrack.cues.getCueById(cue.id)) {
 
-            cue.onenter = function(){
-              cueOnEnter(cue, hls.media);
-            };
+            if(hls.onCueEnterCallback !== undefined) {
+              cue.onenter = function() {
+                hls.onCueEnterCallback(cue, hls.media);
+              }
+            }
 
-            cue.onexit = function(){
-              cueOnExit(cue, hls.media);
-            };
+            if(hls.onCueExitCallback !== undefined) {
+              cue.onexit = function() {
+                hls.onCueExitCallback(cue, hls.media);  
+              }
+            }
 
             try {
               currentTrack.addCue(cue);
