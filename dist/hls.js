@@ -14368,6 +14368,7 @@ var timeline_controller_TimelineController = function (_EventHandler) {
     _this.unparsedVttFrags = [];
     _this.initPTS = undefined;
     _this.cueRanges = [];
+    // this.prefixCounter = 30;
 
     if (_this.config.enableCEA708Captions) {
       var channel1 = new output_filter(_this, 1);
@@ -14596,25 +14597,17 @@ var timeline_controller_TimelineController = function (_EventHandler) {
         // This avoid showing duplicated cues with same timecode and text.
         if (!currentTrack.cues.getCueById(cue.id)) {
 
-          if (hls.onCueEnterCallback !== undefined) {
-            cue.onenter = function () {
-              hls.onCueEnterCallback(cue, hls.media);
-            };
+          if (hls.onMetaParseCallback !== undefined) {
+            hls.onMetaParseCallback(cue, hls.media);
           }
 
-          if (hls.onCueExitCallback !== undefined) {
-            cue.onexit = function () {
-              hls.onCueExitCallback(cue, hls.media);
-            };
-          }
-
-          try {
-            currentTrack.addCue(cue);
-          } catch (err) {
-            var textTrackCue = new window.TextTrackCue(cue.startTime, cue.endTime, cue.text);
-            textTrackCue.id = cue.id;
-            currentTrack.addCue(textTrackCue);
-          }
+          // try {
+          //     currentTrack.addCue(cue);                
+          // } catch (err) {              
+          //   const textTrackCue = new window.TextTrackCue(cue.startTime, cue.endTime, cue.text);
+          //   textTrackCue.id = cue.id;
+          //   currentTrack.addCue(textTrackCue);
+          // }
         }
       });
       hls.trigger(events["a" /* default */].SUBTITLE_FRAG_PROCESSED, { success: true, frag: frag });
@@ -15345,10 +15338,10 @@ var hls_Hls = function () {
     }
   }]);
 
-  function Hls(onCueEnterCallback, onCueExitCallback) {
+  function Hls(onMetaParseCallback) {
     var _this = this;
 
-    var config = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    var config = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
     hls__classCallCheck(this, Hls);
 
@@ -15376,8 +15369,8 @@ var hls_Hls = function () {
     Object(logger["a" /* enableLogs */])(config.debug);
     this.config = config;
     this._autoLevelCapping = -1;
-    this.onCueEnterCallback = onCueEnterCallback;
-    this.onCueExitCallback = onCueExitCallback;
+    this.onMetaParseCallback = onMetaParseCallback;
+
     // observer setup
     var observer = this.observer = new events_default.a();
     observer.trigger = function trigger(event) {

@@ -47,6 +47,7 @@ class TimelineController extends EventHandler {
     this.unparsedVttFrags = [];
     this.initPTS = undefined;
     this.cueRanges = [];
+    // this.prefixCounter = 30;
 
     if (this.config.enableCEA708Captions)
     {
@@ -273,25 +274,17 @@ class TimelineController extends EventHandler {
           // This avoid showing duplicated cues with same timecode and text.
           if (!currentTrack.cues.getCueById(cue.id)) {
 
-            if(hls.onCueEnterCallback !== undefined) {
-              cue.onenter = function() {
-                hls.onCueEnterCallback(cue, hls.media);
-              }
+            if(hls.onMetaParseCallback !== undefined) {
+                hls.onMetaParseCallback(cue, hls.media);
             }
 
-            if(hls.onCueExitCallback !== undefined) {
-              cue.onexit = function() {
-                hls.onCueExitCallback(cue, hls.media);  
-              }
-            }
-
-            try {
-              currentTrack.addCue(cue);
-            } catch (err) {
-              const textTrackCue = new window.TextTrackCue(cue.startTime, cue.endTime, cue.text);
-              textTrackCue.id = cue.id;
-              currentTrack.addCue(textTrackCue);
-            }
+            // try {
+            //     currentTrack.addCue(cue);                
+            // } catch (err) {              
+            //   const textTrackCue = new window.TextTrackCue(cue.startTime, cue.endTime, cue.text);
+            //   textTrackCue.id = cue.id;
+            //   currentTrack.addCue(textTrackCue);
+            // }
           }
         });
         hls.trigger(Event.SUBTITLE_FRAG_PROCESSED, {success: true, frag: frag});

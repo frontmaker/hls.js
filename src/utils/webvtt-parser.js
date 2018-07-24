@@ -99,7 +99,7 @@ const WebVTTParser = {
 
             // cue.startTime += cueOffset - localTime;
             // cue.endTime += cueOffset - localTime;
-
+            
             cue.startTime -= offset;
             cue.endTime -= offset;
 
